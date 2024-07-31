@@ -163,3 +163,21 @@ fn main() {
     bar.push('.');
     println!("bar = {}", bar);
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_p2pk() {
+        let pubkey = 123;
+        let expected = "OP_PUSHBYTES_123".to_string();
+        assert_eq!(String::new_p2pk(pubkey), expected);
+    }
+
+    #[test]
+    fn test_new_p2pkh() {
+        let pubkey_hash = "abc".to_string();
+        let expected = "Hash_abc".to_string();
+        assert_eq!(String::new_p2pkh(pubkey_hash), expected);
+    }
+}
