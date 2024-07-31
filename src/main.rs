@@ -1,4 +1,3 @@
-
 /// A macro to define extension traits for a given type.
 ///
 /// This macro allows defining extension traits for a type with various combinations of `self` and generics.
