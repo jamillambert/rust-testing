@@ -31,7 +31,6 @@ define_extension_trait! {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
