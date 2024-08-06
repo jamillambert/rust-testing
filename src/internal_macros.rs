@@ -2,22 +2,6 @@
 ///
 /// This macro allows defining extension traits for a type with various combinations of `self` and generics.
 /// It generates the trait definition and the corresponding implementation for the given type.
-///
-/// # Examples
-///
-/// ```
-/// define_extension_trait! {
-///     pub trait ScriptBufExt impl for String {
-///         fn new_p2pk(pubkey: u64) -> Self {
-///             format!("OP_PUSHBYTES_{}", pubkey)
-///         }
-///
-///         fn new_p2pkh(pubkey_hash: String) -> Self {
-///             format!("Hash_{}", pubkey_hash)
-///         }
-///     }
-/// }
-/// ```
 macro_rules! define_extension_trait {
     // With self, no generics.
     ($(#[$($trait_attrs:tt)*])* $trait_vis:vis trait $trait_name:ident impl for $ty:ident {
