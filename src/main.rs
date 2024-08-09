@@ -6,6 +6,12 @@ use bitcoin::{Address, Amount, Network, PublicKey, Txid, Witness};
 use bitcoin_hashes::sha256d::Hash;
 use std::str::FromStr;
 
+/// Creates a Bitcoin transaction.
+///
+/// This function creates a new Bitcoin transaction by adding inputs and outputs to the transaction
+/// structure. It generates a random key pair, creates a pay-to-pubkey-hash address, and sets the
+/// script signature.
+/// Finally, it prints the transaction.
 fn create_bitcoin_transaction() {
     // Create a new transaction
     let mut transaction = Transaction {
@@ -65,5 +71,5 @@ fn main() {
         "Address: {} s: {:?}, public_key: {}",
         address, s, public_key
     );
-    create_bitcoin_transaction()
+    create_bitcoin_transaction();
 }
