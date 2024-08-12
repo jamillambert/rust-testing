@@ -2,8 +2,9 @@ use bitcoin::absolute::LockTime;
 use bitcoin::blockdata::script::Script;
 use bitcoin::blockdata::transaction::{OutPoint, Transaction, TxIn, TxOut, Version, Sequence};
 use bitcoin::secp256k1::{rand, Secp256k1};
-use bitcoin::{Address, Amount, Network, PublicKey, Txid, Witness};
+use bitcoin::{Address, Amount, Network, Opcode, PublicKey, Txid, Witness};
 use bitcoin_hashes::sha256d::Hash;
+use bitcoin::opcodes::all::*;
 use std::str::FromStr;
 
 /// Creates a Bitcoin transaction.
@@ -74,34 +75,28 @@ fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool 
 
     for (input, script_pubkey) in transaction.input.iter().zip(input_scripts) {
         let script_sig = input.script_sig.clone();
-        let witness = input.witness.clone();
-        let mut script = script_sig.to_bytes();
+        //let witness = input.witness.clone();
+        let script = script_sig.to_bytes();
         //script.extend(witness.iter().flat_map(|w| w.to_bytes()));
         let mut stack = vec![];
-        let mut altstack = vec![];
         let mut pc = 0;
         while pc < script.len() {
-            let opcode = script[pc];
+            let opcode: Opcode = Opcode::from(script[pc]);
             pc += 1;
             match opcode {
-                opcodes::all::OP_PUSHBYTES_0..=opcodes::all::OP_PUSHBYTES_75 => {
-                    let len = opcode as usize;
-                    stack.push(script[pc..pc + len].to_vec());
-                    pc += len;
-                }
-                opcodes::all::OP_PUSHDATA1 => {
+                OP_PUSHDATA1 => {
                     let len = script[pc] as usize;
                     pc += 1;
                     stack.push(script[pc..pc + len].to_vec());
                     pc += len;
                 }
-                opcodes::all::OP_PUSHDATA2 => {
+                OP_PUSHDATA2 => {
                     let len = u16::from_le_bytes([script[pc], script[pc + 1]]) as usize;
                     pc += 2;
                     stack.push(script[pc..pc + len].to_vec());
                     pc += len;
                 }
-                opcodes::all::OP_PUSHDATA4 => {
+                OP_PUSHDATA4 => {
                     let len = u32::from_le_bytes([
                         script[pc],
                         script[pc + 1],
@@ -112,18 +107,18 @@ fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool 
                     stack.push(script[pc..pc + len].to_vec());
                     pc += len;
                 }
-                opcodes::all::OP_DUP => {
+                OP_DUP => {
                     if let Some(item) = stack.last().cloned() {
                         stack.push(item);
                     }
                 }
-                opcodes::all::OP_HASH160 => {
+                OP_HASH160 => {
                     if let Some(item) = stack.pop() {
-                        let hash = bitcoin_hashes::Hash::hash(&item);
-                        stack.push(hash.into_inner().to_vec());
+                        //let hash160 = bitcoin_hashes::Hash::hash(&item);
+                        //stack.push(hash160.into_inner().to_vec());
                     }
                 }
-                opcodes::all::OP_EQUALVERIFY => {
+                OP_EQUALVERIFY => {
                     if let (Some(item1), Some(item2)) = (stack.pop(), stack.pop()) {
                         if item1 == item2 {
                             continue;
@@ -134,22 +129,22 @@ fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool 
                         return false;
                     }
                 }
-                opcodes::all::OP_CHECKSIG => {
+                OP_CHECKSIG => {
                     if let (Some(pubkey), Some(sig)) = (stack.pop(), stack.pop()) {
-                        let pubkey = bitcoin::PublicKey::from_slice(&pubkey);
-                        let sig = bitcoin::Signature::from_der(&sig);
-                        if let (Ok(pubkey), Ok(sig)) = (pubkey, sig) {
-                            let tx = transaction.clone();
-                            let sighash = tx.signature_hash(0, &script_pubkey, bitcoin::SigHashType::All).unwrap();
-                            let secp = bitcoin::secp256k1::Secp256k1::new();
-                            if secp.verify(&sighash, &sig, &pubkey.key).is_ok() {
-                                stack.push(vec![0x01]);
-                            } else {
-                                stack.push(vec![0x00]);
-                            }
-                        } else {
-                            return false;
-                        }
+                        //let pubkey = bitcoin::PublicKey::from_slice(&pubkey);
+                        //let sig = bitcoin::Signature::from_der(&sig);
+                        //if let (Ok(pubkey), Ok(sig)) = (pubkey, sig) {
+                        //    let tx = transaction.clone();
+                        //    let sighash = tx.signature_hash(0, &script_pubkey, bitcoin::SigHashType::All).unwrap();
+                        //    let secp = bitcoin::secp256k1::Secp256k1::new();
+                        //    if secp.verify(&sighash, &sig, &pubkey.key).is_ok() {
+                        //        stack.push(vec![0x01]);
+                        //    } else {
+                        //        stack.push(vec![0x00]);
+                        //    }
+                        //} else {
+                        //    return false;
+                        //}
                     } else {
                         return false;
                     }
