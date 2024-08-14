@@ -9,10 +9,8 @@ use std::str::FromStr;
 
 /// Creates a Bitcoin transaction.
 ///
-/// This function creates a new Bitcoin transaction by adding inputs and outputs to the transaction
-/// structure. It generates a random key pair, creates a pay-to-pubkey-hash address, and sets the
-/// script signature.
-/// Finally, it prints the transaction.
+/// This function is a template for creating a new Bitcoin transaction by adding inputs and outputs
+/// to the transaction structure.
 fn create_bitcoin_transaction() -> Transaction {
     // Create a new transaction
     let mut transaction = Transaction {
@@ -60,6 +58,10 @@ fn create_bitcoin_transaction() -> Transaction {
     transaction
 }
 
+/// Verifies a Bitcoin transaction.
+///
+/// This function is a template for verifying a Bitcoin transaction by checking the input scripts
+/// against the output scripts.
 fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool {
     // Verify the transaction
     let mut input_scripts = vec![];
