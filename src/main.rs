@@ -1,10 +1,10 @@
 use bitcoin::absolute::LockTime;
 use bitcoin::blockdata::script::Script;
-use bitcoin::blockdata::transaction::{OutPoint, Transaction, TxIn, TxOut, Version, Sequence};
+use bitcoin::blockdata::transaction::{OutPoint, Sequence, Transaction, TxIn, TxOut, Version};
+use bitcoin::opcodes::all::*;
 use bitcoin::secp256k1::{rand, Secp256k1};
 use bitcoin::{Address, Amount, Network, Opcode, PublicKey, Txid, Witness};
 use bitcoin_hashes::sha256d::Hash;
-use bitcoin::opcodes::all::*;
 use std::str::FromStr;
 
 /// Creates a Bitcoin transaction.
@@ -13,7 +13,7 @@ use std::str::FromStr;
 /// structure. It generates a random key pair, creates a pay-to-pubkey-hash address, and sets the
 /// script signature.
 /// Finally, it prints the transaction.
-fn create_bitcoin_transaction() {
+fn create_bitcoin_transaction() -> Transaction {
     // Create a new transaction
     let mut transaction = Transaction {
         version: Version(1),
@@ -33,7 +33,6 @@ fn create_bitcoin_transaction() {
         txid: Txid::from_raw_hash(*prev_txid),
         vout: 0,
     };
-
 
     let input = TxIn {
         previous_output: prev_outpoint,
@@ -58,8 +57,7 @@ fn create_bitcoin_transaction() {
     let script_sig = Script::new();
     transaction.input[0].script_sig = script_sig.into();
 
-    // Print the transaction
-    println!("Bitcoin Transaction: {:?}", transaction);
+    transaction
 }
 
 fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool {
@@ -158,6 +156,7 @@ fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool 
 
     true
 }
+
 fn main() {
     // Generate random key pair.
     let s = Secp256k1::new();
@@ -168,5 +167,13 @@ fn main() {
         "Address: {} s: {:?}, public_key: {}",
         address, s, public_key
     );
-    create_bitcoin_transaction();
+    let transaction = create_bitcoin_transaction();
+    let prev_tx = Transaction {
+        version: Version(1),
+        lock_time: LockTime::from_time(1653195600).expect("valid time"),
+        input: vec![],
+        output: vec![],
+    };
+    let is_valid = verify_transaction(&transaction, &prev_tx);
+    println!("Transaction is valid: {}", is_valid);
 }
