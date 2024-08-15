@@ -4,6 +4,7 @@ use bitcoin::blockdata::transaction::{OutPoint, Sequence, Transaction, TxIn, TxO
 use bitcoin::opcodes::all::*;
 use bitcoin::secp256k1::{rand, Secp256k1};
 use bitcoin::{Address, Amount, Network, Opcode, PublicKey, Txid, Witness};
+use bitcoin::consensus::deserialize;
 use bitcoin_hashes::sha256d::Hash;
 use std::str::FromStr;
 
@@ -129,26 +130,6 @@ fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool 
                         return false;
                     }
                 }
-                OP_CHECKSIG => {
-                    if let (Some(pubkey), Some(sig)) = (stack.pop(), stack.pop()) {
-                        //let pubkey = bitcoin::PublicKey::from_slice(&pubkey);
-                        //let sig = bitcoin::Signature::from_der(&sig);
-                        //if let (Ok(pubkey), Ok(sig)) = (pubkey, sig) {
-                        //    let tx = transaction.clone();
-                        //    let sighash = tx.signature_hash(0, &script_pubkey, bitcoin::SigHashType::All).unwrap();
-                        //    let secp = bitcoin::secp256k1::Secp256k1::new();
-                        //    if secp.verify(&sighash, &sig, &pubkey.key).is_ok() {
-                        //        stack.push(vec![0x01]);
-                        //    } else {
-                        //        stack.push(vec![0x00]);
-                        //    }
-                        //} else {
-                        //    return false;
-                        //}
-                    } else {
-                        return false;
-                    }
-                }
                 _ => {
                     return false;
                 }
@@ -170,12 +151,7 @@ fn main() {
         address, s, public_key
     );
     let transaction = create_bitcoin_transaction();
-    let prev_tx = Transaction {
-        version: Version(1),
-        lock_time: LockTime::from_time(1653195600).expect("valid time"),
-        input: vec![],
-        output: vec![],
-    };
+    let prev_tx: Transaction = deserialize(&hex::decode("0200000000010166c3d39490dc827a2594c7b17b7d37445e1f4b372179649cd2ce4475e3641bbb0100000017160014e69aa750e9bff1aca1e32e57328b641b611fc817fdffffff01e87c5d010000000017a914f3890da1b99e44cd3d52f7bcea6a1351658ea7be87024830450221009eb97597953dc288de30060ba02d4e91b2bde1af2ecf679c7f5ab5989549aa8002202a98f8c3bd1a5a31c0d72950dd6e2e3870c6c5819a6c3db740e91ebbbc5ef4800121023f3d3b8e74b807e32217dea2c75c8d0bd46b8665b3a2d9b3cb310959de52a09bc9d20700").unwrap()).unwrap();
     let is_valid = verify_transaction(&transaction, &prev_tx);
     println!("Transaction is valid: {}", is_valid);
 }
