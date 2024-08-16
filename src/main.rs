@@ -6,13 +6,12 @@ use bitcoin::secp256k1::{rand, Secp256k1};
 use bitcoin::{Address, Amount, Network, Opcode, PublicKey, Txid, Witness};
 use bitcoin::consensus::deserialize;
 use bitcoin_hashes::sha256d::Hash;
-use std::str::FromStr;
 
 /// Creates a Bitcoin transaction.
 ///
 /// This function is a template for creating a new Bitcoin transaction by adding inputs and outputs
 /// to the transaction structure.
-fn create_bitcoin_transaction() -> Transaction {
+fn create_bitcoin_transaction(recipient_address: &Address) -> Transaction {
     // Create a new transaction
     let mut transaction = Transaction {
         version: Version(1),
@@ -41,11 +40,6 @@ fn create_bitcoin_transaction() -> Transaction {
     };
     transaction.input.push(input);
 
-    // Add outputs to the transaction
-    let recipient_address: Address = Address::from_str("32iVBEu4dxkUQk9dJbZUiBiQdmypcEyJRf")
-        .unwrap()
-        .require_network(Network::Bitcoin)
-        .unwrap();
     let output = TxOut {
         value: Amount::from_btc(0.1).unwrap(),
         script_pubkey: recipient_address.script_pubkey(),
@@ -67,14 +61,14 @@ fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool 
     // Verify the transaction
     let mut input_scripts = vec![];
     for input in &transaction.input {
-        let prev_txid = input.previous_output.txid;
+        let _prev_txid = input.previous_output.txid;
         let prev_vout = input.previous_output.vout;
         let prev_output = prev_tx.output[prev_vout as usize].clone();
         let script_pubkey = prev_output.script_pubkey.clone();
         input_scripts.push(script_pubkey);
     }
 
-    for (input, script_pubkey) in transaction.input.iter().zip(input_scripts) {
+    for (input, _script_pubkey) in transaction.input.iter().zip(input_scripts) {
         let script_sig = input.script_sig.clone();
         //let witness = input.witness.clone();
         let script = script_sig.to_bytes();
@@ -113,12 +107,6 @@ fn verify_transaction(transaction: &Transaction, prev_tx: &Transaction) -> bool 
                         stack.push(item);
                     }
                 }
-                OP_HASH160 => {
-                    if let Some(item) = stack.pop() {
-                        //let hash160 = bitcoin_hashes::Hash::hash(&item);
-                        //stack.push(hash160.into_inner().to_vec());
-                    }
-                }
                 OP_EQUALVERIFY => {
                     if let (Some(item1), Some(item2)) = (stack.pop(), stack.pop()) {
                         if item1 == item2 {
@@ -150,7 +138,7 @@ fn main() {
         "Address: {} s: {:?}, public_key: {}",
         address, s, public_key
     );
-    let transaction = create_bitcoin_transaction();
+    let transaction = create_bitcoin_transaction(&address);
     let prev_tx: Transaction = deserialize(&hex::decode("0200000000010166c3d39490dc827a2594c7b17b7d37445e1f4b372179649cd2ce4475e3641bbb0100000017160014e69aa750e9bff1aca1e32e57328b641b611fc817fdffffff01e87c5d010000000017a914f3890da1b99e44cd3d52f7bcea6a1351658ea7be87024830450221009eb97597953dc288de30060ba02d4e91b2bde1af2ecf679c7f5ab5989549aa8002202a98f8c3bd1a5a31c0d72950dd6e2e3870c6c5819a6c3db740e91ebbbc5ef4800121023f3d3b8e74b807e32217dea2c75c8d0bd46b8665b3a2d9b3cb310959de52a09bc9d20700").unwrap()).unwrap();
     let is_valid = verify_transaction(&transaction, &prev_tx);
     println!("Transaction is valid: {}", is_valid);
