@@ -7,3 +7,4 @@ edition = "2021"
 bitcoin = {version = "0.32.2", features = ["rand-std"] }
 bitcoin_hashes = "0.14.0"
 hex = "0.4.3"
+rand = "0.8.4"
