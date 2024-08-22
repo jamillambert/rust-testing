@@ -1,17 +1,17 @@
 use bitcoin::absolute::LockTime;
 use bitcoin::blockdata::script::Script;
 use bitcoin::blockdata::transaction::{OutPoint, Sequence, Transaction, TxIn, TxOut, Version};
+use bitcoin::consensus::deserialize;
 use bitcoin::opcodes::all::*;
 use bitcoin::secp256k1::Secp256k1;
 use bitcoin::{Address, Amount, Network, Opcode, PublicKey, Txid, Witness};
-use bitcoin::consensus::deserialize;
 use bitcoin_hashes::sha256d::Hash;
 
 /// Creates a Bitcoin transaction.
 ///
 /// This function is a template for creating a new Bitcoin transaction by adding inputs and outputs
 /// to the transaction structure.
-fn create_bitcoin_transaction(recipient_address: &Address) -> Transaction {
+fn create_transaction(prev_txid: &Hash, recipient_address: &Address, amount: &Amount) -> Transaction {
     // Create a new transaction
     let mut transaction = Transaction {
         version: Version(1),
@@ -21,12 +21,6 @@ fn create_bitcoin_transaction(recipient_address: &Address) -> Transaction {
     };
 
     // Add inputs to the transaction
-    let prev_txid = [
-        0x1b, 0x3f, 0x4d, 0x6f, 0x7f, 0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0x0f, 0x1f, 0x2f,
-        0x3f, 0x4f, 0x5f, 0x6f, 0x7f, 0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0x0f, 0x1f, 0x2f,
-        0x3f, 0x4f,
-    ];
-    let prev_txid = Hash::from_bytes_ref(&prev_txid);
     let prev_outpoint = OutPoint {
         txid: Txid::from_raw_hash(*prev_txid),
         vout: 0,
@@ -41,7 +35,7 @@ fn create_bitcoin_transaction(recipient_address: &Address) -> Transaction {
     transaction.input.push(input);
 
     let output = TxOut {
-        value: Amount::from_btc(0.1).unwrap(),
+        value: *amount,
         script_pubkey: recipient_address.script_pubkey(),
     };
     transaction.output.push(output);
@@ -200,11 +194,15 @@ fn main() {
     let public_key = PublicKey::new(s.generate_keypair(&mut rand::thread_rng()).1);
     // Generate pay-to-pubkey-hash address.
     let address = Address::p2pkh(&public_key, Network::Bitcoin);
-    println!(
-        "Address: {} s: {:?}, public_key: {}",
-        address, s, public_key
-    );
-    let transaction = create_bitcoin_transaction(&address);
+    println!("Address: {} public_key: {}", address, public_key);
+    let prev_txid = [
+        0x1b, 0x3f, 0x4d, 0x6f, 0x7f, 0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0x0f, 0x1f, 0x2f,
+        0x3f, 0x4f, 0x5f, 0x6f, 0x7f, 0x8f, 0x9f, 0xaf, 0xbf, 0xcf, 0xdf, 0xef, 0x0f, 0x1f, 0x2f,
+        0x3f, 0x4f,
+    ];
+    let prev_txid = Hash::from_bytes_ref(&prev_txid);
+    let amount = Amount::from_btc(0.1).unwrap();
+    let transaction = create_transaction(&prev_txid, &address, &amount);
     sign_transaction(&transaction);
     let prev_tx: Transaction = deserialize(&hex::decode("0200000000010166c3d39490dc827a2594c7b17b7d37445e1f4b372179649cd2ce4475e3641bbb0100000017160014e69aa750e9bff1aca1e32e57328b641b611fc817fdffffff01e87c5d010000000017a914f3890da1b99e44cd3d52f7bcea6a1351658ea7be87024830450221009eb97597953dc288de30060ba02d4e91b2bde1af2ecf679c7f5ab5989549aa8002202a98f8c3bd1a5a31c0d72950dd6e2e3870c6c5819a6c3db740e91ebbbc5ef4800121023f3d3b8e74b807e32217dea2c75c8d0bd46b8665b3a2d9b3cb310959de52a09bc9d20700").unwrap()).unwrap();
     let is_valid = verify_transaction(&transaction, &prev_tx);
