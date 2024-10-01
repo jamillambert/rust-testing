@@ -652,7 +652,7 @@ pub(super) fn bytes_to_asm_fmt(script: &[u8], f: &mut dyn fmt::Write) -> fmt::Re
         };
     }
 
-    let mut iter = script.iter();
+    let mut iter = self.as_bytes().iter();
     // Was at least one opcode emitted?
     let mut at_least_one = false;
     // `iter` needs to be borrowed in `read_push_data_len`, so we have to use `while let` instead
