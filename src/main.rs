@@ -48,8 +48,9 @@ fn base58check_encode(input: &str) -> String {
 }
 
 fn convert_base58_to_base58check(input: &str) -> String {
-    // Decode the Base58 string to bytes
-    let mut bytes = bs58::decode(input).into_vec().unwrap();
+    let mut bytes = vec![0];  // Start with 1 (in Base58 it's represented by leading zeros)
+    let original_bytes = bs58::decode(input).into_vec().unwrap();
+    bytes.extend_from_slice(&original_bytes);
 
     // Calculate SHA-256 hash
     let mut hasher = Sha256::new();
