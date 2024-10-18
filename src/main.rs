@@ -1,91 +1,71 @@
-use std::str::FromStr;
-use web3::transports::Http;
-use web3::types::U256;
-use web3::Web3;
-
-async fn web3_test() {
-    // Connect to the Ethereum node
-    let transport = Http::new("http://localhost:8545").unwrap();
-    let web3 = Web3::new(transport);
-
-    // Perform some web3 operations
-    let block_number = web3.eth().block_number().await.unwrap();
-    println!("Latest block number: {:?}", block_number);
-
-    use web3::types::H160;
-
-    let balance = web3
-        .eth()
-        .balance(
-            H160::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap(),
-            None,
-        )
-        .await
-        .unwrap();
-    println!("Account balance: {:?}", balance);
-
-    let gas_price = web3.eth().gas_price().await.unwrap();
-    println!("Gas price: {:?}", gas_price);
-
-    let transaction_count = web3
-        .eth()
-        .transaction_count(
-            H160::from_str("0x1234567890abcdef1234567890abcdef12345678").unwrap(),
-            None,
-        )
-        .await
-        .unwrap();
-    println!("Transaction count: {:?}", transaction_count);
-
-    use web3::types::BlockId;
-
-    use web3::types::BlockNumber;
-
-    let block = web3
-        .eth()
-        .block_with_txs(BlockId::Number(BlockNumber::Number(
-            block_number.as_u64().into(),
-        )))
-        .await
-        .unwrap();
-    println!("Block: {:?}", block);
-
-    use web3::types::TransactionId;
-
-    use web3::types::H256;
-
-    let transaction_id = TransactionId::from(
-        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
-            .unwrap(),
-    );
-    let transaction = web3.eth().transaction(transaction_id).await.unwrap();
-    println!("Transaction: {:?}", transaction);
-
-    let receipt = web3
-        .eth()
-        .transaction_receipt(
-            H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    println!("Transaction receipt: {:?}", receipt);
-
-    let contract_address: H160 = "0x1234567890abcdef1234567890abcdef12345678"
-        .parse()
-        .unwrap();
-
-    use web3::contract::Options;
-
-    let options = Options::with(|opt| {
-        opt.gas = Some(5_000.into());
-        opt.gas_price = Some(1.into());
-        opt.value = Some(10.into());
-    });
-}
+use bech32::{self, ToBase32, Variant};
+use sha2::{Sha256, Digest};
+use bs58;
 
 fn main() {
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(web3_test());
+    let input = "This is string to test the encoding with";
+
+    let bech32_str = bech32_encode(input);
+    let base58check_str = base58check_encode(input);
+    let base58_str_checked = convert_base58_to_base58check(base58_encode(input).as_str());
+
+    println!("Bech32 string: {}", bech32_str);
+    println!("Base58Check string: {}", base58check_str);
+    println!("Base58Check string from base58: {}", base58_str_checked);
+
+}
+
+fn bech32_encode(input: &str) -> String {
+    let bytes = input.as_bytes();
+    bech32::encode("bc", bytes.to_base32(), Variant::Bech32m).unwrap()
+}
+
+fn base58_encode(input: &str) -> String {
+    bs58::encode(input.as_bytes()).into_string()
+}
+
+fn base58check_encode(input: &str) -> String {
+    let mut bytes = vec![0];  // Start with 1 (in Base58 it's represented by leading zeros)
+    bytes.extend_from_slice(input.as_bytes());
+
+    // Calculate SHA-256 hash
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash1 = hasher.finalize_reset();
+
+    // Calculate SHA-256 hash of the hash
+    hasher.update(&hash1);
+    let hash2 = hasher.finalize();
+
+    // Take first 4 bytes of the second hash as checksum
+    let checksum = &hash2[..4];
+
+    // Append checksum to the original bytes
+    bytes.extend_from_slice(checksum);
+
+    // Encode the resulting bytes in Base58
+    bs58::encode(bytes).into_string()
+}
+
+fn convert_base58_to_base58check(input: &str) -> String {
+    // Decode the Base58 string to bytes
+    let mut bytes = bs58::decode(input).into_vec().unwrap();
+
+    // Calculate SHA-256 hash
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash1 = hasher.finalize_reset();
+
+    // Calculate SHA-256 hash of the hash
+    hasher.update(&hash1);
+    let hash2 = hasher.finalize();
+
+    // Take first 4 bytes of the second hash as checksum
+    let checksum = &hash2[..4];
+
+    // Append checksum to the original bytes
+    bytes.extend_from_slice(checksum);
+
+    // Encode the resulting bytes in Base58
+    bs58::encode(bytes).into_string()
 }
