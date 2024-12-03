@@ -1,11 +1,16 @@
-mod encode;
 
 fn main() {
-    let input = "This is string to test the encoding with";
-    let bech32_str = encode::bech32_encode(input);
-    let base58check_str = encode::base58check_encode(input);
-    let base58_str_checked = encode::convert_base58_to_base58check(encode::base58_encode(input).as_str());
-    println!("Bech32 string: {}", bech32_str);
-    println!("Base58Check string: {}", base58check_str);
-    println!("Base58Check string from base58: {}", base58_str_checked);
+    // Test the max u64 that can be stored as an f64 is the theoretical value of
+    // 2^53 = 9_007_199_254_740_992
+    let mut u_64: u64 = 9_007_199_254_000_000;
+    loop {
+        let f_64 = u_64 as f64;
+        if u_64 != f_64 as u64 {
+            println!("Failed at u64: {}, incorrecly stored as f64 {}", u_64, f_64);
+            println!("Max u64 is: {}", u_64 - 1);
+            break;
+        }
+        u_64 += 1;
+    }
 }
+
